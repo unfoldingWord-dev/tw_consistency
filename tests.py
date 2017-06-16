@@ -19,15 +19,15 @@ class TestgetURL(unittest.TestCase):
 class TestgetUSFM(unittest.TestCase):
 
   def testUpdate(self):
-    getUSFM()
-    f = open('57-TIT.usfm', 'r').read()
+    #getUSFM()
+    f = open('sources/57-TIT.usfm', 'r').read()
     names = ['Artemas', 'Tychicus', 'Zenas', 'Apollos', 'Paul']
     for x in names:
       self.assertTrue(x in f)
 
   def testNoUpdate(self):
     getUSFM(False)
-    f = open('57-TIT.usfm', 'r').read()
+    f = open('sources/57-TIT.usfm', 'r').read()
     names = ['Artemas', 'Tychicus', 'Zenas', 'Apollos', 'Paul']
     for x in names:
       self.assertTrue(x in f)
@@ -35,7 +35,7 @@ class TestgetUSFM(unittest.TestCase):
 class TestCompare(unittest.TestCase):
 
   def testgetULBText(self):
-    ulb_book = open('test-41-MAT.usfm', 'r').readlines()
+    ulb_book = open('sources/test-41-MAT.usfm', 'r').readlines()
     self.assertEqual(getULBText(ulb_book, '1', '4'), 'Ram was the father of Amminadab, Amminadab the father of Nahshon, and Nahshon the father of Salmon.')
     self.assertEqual(getULBText(ulb_book, '13', '58'), 'And he did not do many miracles there because of their unbelief.')
     self.assertEqual(getULBText(ulb_book, '13', '35'), 'This was in order that what had been said through the prophet might come true, when he said, "I will open my mouth in parables. I will say things that were hidden from the foundation of the world."')
@@ -46,8 +46,8 @@ class TestCompare(unittest.TestCase):
     self.assertEqual(getULBText(ulb_book, '5', '9'), 'Blessed are the peacemakers, for they will be called sons of God.')
 
   def testCompareString(self):
-    compare('test-tW-MAT.csv', 'test-41-MAT.usfm')
-    f = open('test-41-MAT.usfm.diffs', 'r').read()
+    compare('sources/test-tW-MAT.csv', 'sources/test-41-MAT.usfm')
+    f = open('diffs/test-tW-MAT.csv.diffs.csv', 'r').read()
     self.assertTrue('Therefore every scribe' in f)
     self.assertTrue('Jesus came up immediately from the water' in f)
     self.assertFalse('appeared to him in a dream, saying' in f)
@@ -60,8 +60,35 @@ class TestCompare(unittest.TestCase):
     self.assertFalse('I baptize you with water' in f)
     self.assertFalse('But if I drive out demons ' in f)
     self.assertFalse('And whoever speaks any word' in f)
-    os.remove('test-41-MAT.usfm.diffs')
+    self.assertEqual(len(open('diffs/test-tW-MAT.csv.diffs.csv', 'r').readlines()), 5)
+
+class TestExport(unittest.TestCase):
+
+  def testloadConfig(self):
+    config = loadConfig('sources/test-config.yaml')
+    self.assertEqual(type(config), dict)
+    self.assertEqual(len(config['aaron']['occurrences']), 10)
+    self.assertEqual(len(config['aaron']['false_positives']), 0)
+
+  def testConfigExport(self):
+    config = loadConfig('sources/test-config.yaml')
+    config = export('sources/test-tW-MAT.csv', config)
+    config = export('diffs/test-tW-MAT.csv.diffs.csv', config)
+    self.assertTrue('scribe' in config)
+    self.assertTrue('rc://en/ulb/mat/book/13/52' in config['scribe']['occurrences'])
+    self.assertTrue('rc://en/ulb/mat/book/3/16' in config['holyspirit']['occurrences'])
+    self.assertFalse('rc://en/ulb/mat/book/8/21' in config['godthefather']['occurrences'])
+    saveConfig('test-config.yaml', config)
+    f = open('test-config.yaml', 'r').read()
+    self.assertTrue(f.startswith('---'))
+    self.assertTrue('rc://en/ulb/1ch/book/28/01' in f)
+    self.assertTrue('holyspirit' in f)
+    self.assertTrue('rc://en/ulb/mat/book/13/52' in f)
+    new_config = loadConfig('test-config.yaml')
+    self.assertEqual(type(new_config), dict)
 
 
 if __name__ == '__main__':
   unittest.main()
+  #os.remove('diffs/test-tW-MAT.csv.diffs.csv')
+  #os.remove('test-config.yaml')

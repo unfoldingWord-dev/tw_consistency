@@ -8,6 +8,8 @@ import sys
 import csv
 import shutil
 import urllib2
+from glob import glob
+from ruamel import yaml
 
 
 ULB_source_pattern = 'https://git.door43.org/Door43-Catalog/en_ulb/raw/master/{0}-{1}.usfm'
@@ -84,20 +86,56 @@ books = {
 def main(args):
   getUSFM(False)
   #getCSVs()
-  compare('test-tW-MAT.csv', 'test-41-MAT.usfm')
+  config = loadConfig('config.yaml')
+  for usfm_file in glob('sources/[0-6]*.usfm'):
+    tw_file = usfm_file.replace('usfm', 'tw.csv')
+    if not os.path.exists(tw_file): continue
+    diff_file = usfm_file.replace('usfm', 'tw.csv.diffs.csv').replace('sources', 'diffs')
+    compare(tw_file, usfm_file)
+    config = export(tw_file, config)
+    config = export(diff_file, config)
+  saveConfig('config.yaml', config)
 
 def compare(res1, res2):
   ulb_book = open(res2, 'r').readlines()
-  diff_file = '{0}.diffs'.format(res2)
+  diff_file = 'diffs/{0}.diffs.csv'.format(res1.rsplit('/', 1)[1])
   diff = csv.writer(open(diff_file, 'w'))
   with open(res1, 'rb') as twcsv:
     for row in csv.reader(twcsv):
       bk, chp, vs = row[1:4]
-      if bk == 'Book': continue
+      if bk == 'Book':
+        diff.writerow(row)
+        continue
       tw_ulb_text = row[7].strip()
       ulb_text = getULBText(ulb_book, chp, vs)
       if tw_ulb_text != ulb_text:
         diff.writerow(row)
+
+def export(f, config):
+  with open(f, 'rb') as fcsv:
+    for row in csv.reader(fcsv):
+      book, chp, vs = row[1:4]
+      if ( book == 'Book' or book == '' ): continue
+      if row[0] == 'FALSE': continue
+      bk = [x for x in books.iterkeys() if books[x][0] == book]
+      bk = bk[0].lower()
+      tw = row[5].rsplit('.txt', 1)[0]
+      if tw not in config:
+        config[tw] = {'false_positives': [], 'occurrences': []}
+      entry = 'rc://en/ulb/{0}/book/{1}/{2}'.format(bk, chp, vs)
+      config[tw]['occurrences'].append(entry)
+  return config
+
+def saveConfig(config_path, config):
+  config_f = open(config_path, 'w')
+  yaml.safe_dump(config, config_f, default_flow_style=False, explicit_start=True, indent=2)
+
+def loadConfig(config_path):
+  config = {}
+  if os.path.exists(config_path):
+    config_f = open(config_path, 'r').read()
+    config = yaml.safe_load(config_f)
+  return config
 
 def getULBText(ulb_book, chp, vs):
   inchp = False
@@ -120,10 +158,9 @@ def getULBText(ulb_book, chp, vs):
   
 
 def getUSFM(update=True):
-  print "Getting source USFM files..."
   for entry in books.iterkeys():
     source_url = ULB_source_pattern.format(books[entry][1], entry)
-    output_path = os.path.join(os.getcwd(), source_url.rsplit('/', 1)[1])
+    output_path = os.path.join(os.getcwd(), 'sources', source_url.rsplit('/', 1)[1])
     if not update:
       if os.path.exists(output_path): continue
     getURL(source_url, output_path)
