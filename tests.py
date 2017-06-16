@@ -19,7 +19,7 @@ class TestgetURL(unittest.TestCase):
 class TestgetUSFM(unittest.TestCase):
 
   def testUpdate(self):
-    #getUSFM()
+    getUSFM()
     f = open('sources/57-TIT.usfm', 'r').read()
     names = ['Artemas', 'Tychicus', 'Zenas', 'Apollos', 'Paul']
     for x in names:
@@ -46,7 +46,7 @@ class TestCompare(unittest.TestCase):
     self.assertEqual(getULBText(ulb_book, '5', '9'), 'Blessed are the peacemakers, for they will be called sons of God.')
 
   def testCompareString(self):
-    compare('sources/test-tW-MAT.csv', 'sources/test-41-MAT.usfm')
+    compare('sources/test-tW-MAT.csv', 'sources/test-41-MAT.usfm', {})
     f = open('diffs/test-tW-MAT.csv.diffs.csv', 'r').read()
     self.assertTrue('Therefore every scribe' in f)
     self.assertTrue('Jesus came up immediately from the water' in f)
@@ -60,35 +60,53 @@ class TestCompare(unittest.TestCase):
     self.assertFalse('I baptize you with water' in f)
     self.assertFalse('But if I drive out demons ' in f)
     self.assertFalse('And whoever speaks any word' in f)
-    self.assertEqual(len(open('diffs/test-tW-MAT.csv.diffs.csv', 'r').readlines()), 5)
+    self.assertFalse('Matthew,,' in f)
+    self.assertTrue('dove and alighting on him.' in f)
+    self.assertEqual(len(open('diffs/test-tW-MAT.csv.diffs.csv', 'r').readlines()), 3)
 
 class TestExport(unittest.TestCase):
 
   def testloadConfig(self):
     config = loadConfig('sources/test-config.yaml')
     self.assertEqual(type(config), dict)
-    self.assertEqual(len(config['aaron']['occurrences']), 10)
+    self.assertEqual(len(config['aaron']['occurrences']), 5)
     self.assertEqual(len(config['aaron']['false_positives']), 0)
+
+  def testconfigCheck(self):
+    config = loadConfig('sources/test-config.yaml')
+    self.assertTrue(configCheck('aaron', '1ch', '07', '38', config))
+    self.assertFalse(configCheck('aaron', '1ti', '02', '18', config))
+    self.assertFalse(configCheck('god', '1ch', '07', '38', config))
 
   def testConfigExport(self):
     config = loadConfig('sources/test-config.yaml')
-    config = export('sources/test-tW-MAT.csv', config)
-    config = export('diffs/test-tW-MAT.csv.diffs.csv', config)
+    tw_list = loadtWs('../en_tw/bible')
+    config = export('sources/test-tW-MAT.csv', config, tw_list)
+    config = export('diffs/test-tW-MAT.csv.diffs.csv', config, tw_list)
     self.assertTrue('scribe' in config)
-    self.assertTrue('rc://en/ulb/mat/book/13/52' in config['scribe']['occurrences'])
-    self.assertTrue('rc://en/ulb/mat/book/3/16' in config['holyspirit']['occurrences'])
-    self.assertFalse('rc://en/ulb/mat/book/8/21' in config['godthefather']['occurrences'])
+    self.assertTrue('rc://en/ulb/book/mat/13/52' in config['scribe']['occurrences'])
+    self.assertTrue('rc://en/ulb/book/mat/3/16' in config['holyspirit']['occurrences'])
+    self.assertFalse('rc://en/ulb/book/mat/8/21' in config['godthefather']['occurrences'])
     saveConfig('test-config.yaml', config)
     f = open('test-config.yaml', 'r').read()
     self.assertTrue(f.startswith('---'))
-    self.assertTrue('rc://en/ulb/1ch/book/28/01' in f)
+    self.assertTrue('rc://en/ulb/book/1ch/28/01' in f)
     self.assertTrue('holyspirit' in f)
-    self.assertTrue('rc://en/ulb/mat/book/13/52' in f)
+    self.assertTrue('rc://en/ulb/book/mat/13/52' in f)
+    self.assertFalse("? ''" in f)
     new_config = loadConfig('test-config.yaml')
     self.assertEqual(type(new_config), dict)
+
+class TestloadtWs(unittest.TestCase):
+
+  def testloadtWs(self):
+    tw_list = loadtWs('../en_tw/bible')
+    self.assertEqual(type(tw_list), list)
+    self.assertTrue('reward' in tw_list)
+    self.assertTrue('god' in tw_list)
+    self.assertFalse('God' in tw_list)
+    self.assertFalse('afather' in tw_list)
 
 
 if __name__ == '__main__':
   unittest.main()
-  #os.remove('diffs/test-tW-MAT.csv.diffs.csv')
-  #os.remove('test-config.yaml')

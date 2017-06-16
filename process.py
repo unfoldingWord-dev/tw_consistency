@@ -13,6 +13,7 @@ from ruamel import yaml
 
 
 ULB_source_pattern = 'https://git.door43.org/Door43-Catalog/en_ulb/raw/master/{0}-{1}.usfm'
+diff_file = 'diffs/differences.csv'
 books = {
           #u'GEN': [ u'Genesis', '01' ],
           #u'EXO': [ u'Exodus', '02' ],
@@ -85,50 +86,79 @@ books = {
 
 def main(args):
   getUSFM(False)
-  #getCSVs()
+  # Get JAMES
   config = loadConfig('config.yaml')
+  if os.path.exists(diff_file):
+    os.remove(diff_file)
+  tw_list = loadtWs('../en_tw/bible')
   for usfm_file in glob('sources/[0-6]*.usfm'):
     tw_file = usfm_file.replace('usfm', 'tw.csv')
     if not os.path.exists(tw_file): continue
-    diff_file = usfm_file.replace('usfm', 'tw.csv.diffs.csv').replace('sources', 'diffs')
-    compare(tw_file, usfm_file)
-    config = export(tw_file, config)
-    config = export(diff_file, config)
+    compare(tw_file, usfm_file, config)
+    config = export(tw_file, config, tw_list)
+
+    # After editors review the diffs, run this:
+    #config = export(diff_file, config, tw_list)
   saveConfig('config.yaml', config)
 
-def compare(res1, res2):
+def compare(res1, res2, config):
   ulb_book = open(res2, 'r').readlines()
-  diff_file = 'diffs/{0}.diffs.csv'.format(res1.rsplit('/', 1)[1])
-  diff = csv.writer(open(diff_file, 'w'))
+  diff = csv.writer(open(diff_file, 'a'))
   with open(res1, 'rb') as twcsv:
     for row in csv.reader(twcsv):
-      bk, chp, vs = row[1:4]
-      if bk == 'Book':
-        diff.writerow(row)
+      book, chp, vs = row[1:4]
+      if book == 'Book':
         continue
       tw_ulb_text = row[7].strip()
+      if tw_ulb_text == '': continue
       ulb_text = getULBText(ulb_book, chp, vs)
       if tw_ulb_text != ulb_text:
+        tw = row[5].rsplit('.txt', 1)[0].lower()
+        # Check to see if this combo is alread in config.yaml,
+        # if it is, continue as no need to require a recheck
+        if configCheck(tw, getBook(book), chp, vs, config):
+          continue
+        row[7] = ulb_text
         diff.writerow(row)
 
-def export(f, config):
+def configCheck(tw, bk, chp, vs, config):
+  if tw in config:
+    if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2)) in config[tw]['occurrences']:
+      return True
+  return False
+
+def export(f, config, tw_list):
   with open(f, 'rb') as fcsv:
     for row in csv.reader(fcsv):
       book, chp, vs = row[1:4]
       if ( book == 'Book' or book == '' ): continue
       if row[0] == 'FALSE': continue
-      bk = [x for x in books.iterkeys() if books[x][0] == book]
-      bk = bk[0].lower()
-      tw = row[5].rsplit('.txt', 1)[0]
+      bk = getBook(book)
+      tw = row[5].rsplit('.txt', 1)[0].lower()
+      if tw == '': continue
+      if tw not in tw_list:
+        #######print row
+        continue
       if tw not in config:
         config[tw] = {'false_positives': [], 'occurrences': []}
-      entry = 'rc://en/ulb/{0}/book/{1}/{2}'.format(bk, chp, vs)
-      config[tw]['occurrences'].append(entry)
+      entry = 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2))
+      if entry not in config[tw]['occurrences']:
+        config[tw]['occurrences'].append(entry)
   return config
+
+def getBook(book):
+  bk = [x for x in books.iterkeys() if books[x][0] == book.strip()]
+  return bk[0].lower()
+
+def loadtWs(path):
+  tws = []
+  for x in glob('{0}/*/*.md'.format(path)):
+    tws.append(x.rsplit('/', 1)[1].rsplit('.', 1)[0])
+  return tws
 
 def saveConfig(config_path, config):
   config_f = open(config_path, 'w')
-  yaml.safe_dump(config, config_f, default_flow_style=False, explicit_start=True, indent=2)
+  yaml.safe_dump(config, config_f, default_flow_style=False, explicit_start=True)
 
 def loadConfig(config_path):
   config = {}

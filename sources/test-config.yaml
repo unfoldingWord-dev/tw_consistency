@@ -2,13 +2,8 @@
   aaron:
     false_positives: []
     occurrences:
-      - 'rc://en/ulb/1ch/book/23/12'
-      - 'rc://en/ulb/1ch/book/07/38'
-      - 'rc://en/ulb/1ch/book/28/01'
-      - 'rc://en/ulb/1ch/book/01/05'
-      - 'rc://en/ulb/1ch/book/16/44'
-      - 'rc://en/obs/obs/book/09/15'
-      - 'rc://en/obs/obs/book/10/05'
-      - 'rc://en/obs/obs/book/13/09'
-      - 'rc://en/obs/obs/book/13/11'
-      - 'rc://en/obs/obs/book/14/07'
+      - 'rc://en/ulb/book/1ch/23/12'
+      - 'rc://en/ulb/book/1ch/07/38'
+      - 'rc://en/ulb/book/1ch/28/01'
+      - 'rc://en/ulb/book/1ch/01/05'
+      - 'rc://en/ulb/book/1ch/16/44'
