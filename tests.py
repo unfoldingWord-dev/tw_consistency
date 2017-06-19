@@ -19,7 +19,7 @@ class TestgetURL(unittest.TestCase):
 class TestgetUSFM(unittest.TestCase):
 
   def testUpdate(self):
-    getUSFM()
+    #getUSFM()
     f = open('sources/57-TIT.usfm', 'r').read()
     names = ['Artemas', 'Tychicus', 'Zenas', 'Apollos', 'Paul']
     for x in names:
@@ -85,8 +85,8 @@ class TestExport(unittest.TestCase):
     config = export('diffs/test-tW-MAT.csv.diffs.csv', config, tw_list)
     self.assertTrue('scribe' in config)
     self.assertTrue('rc://en/ulb/book/mat/13/52' in config['scribe']['occurrences'])
-    self.assertTrue('rc://en/ulb/book/mat/3/16' in config['holyspirit']['occurrences'])
-    self.assertFalse('rc://en/ulb/book/mat/8/21' in config['godthefather']['occurrences'])
+    self.assertTrue('rc://en/ulb/book/mat/03/16' in config['holyspirit']['occurrences'])
+    self.assertFalse('rc://en/ulb/book/mat/08/21' in config['godthefather']['occurrences'])
     saveConfig('test-config.yaml', config)
     f = open('test-config.yaml', 'r').read()
     self.assertTrue(f.startswith('---'))
