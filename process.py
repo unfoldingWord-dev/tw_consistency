@@ -122,6 +122,9 @@ def compare(res1, res2, config):
         diff.writerow(row)
 
 def configCheck(tw, bk, chp, vs, config):
+  '''
+  Returns True if tW is found in `occurrences` list in config.yaml.
+  '''
   if tw in config:
     if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2)) in config[tw]['occurrences']:
       return True
@@ -132,18 +135,21 @@ def export(f, config, tw_list):
     for row in csv.reader(fcsv):
       book, chp, vs = row[1:4]
       if ( book == 'Book' or book == '' ): continue
-      if row[0] == 'FALSE': continue
       bk = getBook(book)
       tw = row[5].rsplit('.txt', 1)[0].lower()
       if tw == '': continue
       if tw not in tw_list:
-        #######print row
+        ######print row
         continue
       if tw not in config:
         config[tw] = {'false_positives': [], 'occurrences': []}
       entry = 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2))
-      if entry not in config[tw]['occurrences']:
-        config[tw]['occurrences'].append(entry)
+      if row[0] == 'FALSE':
+        if entry not in config[tw]['false_positives']:
+          config[tw]['false_positives'].append(entry)
+      else:
+        if entry not in config[tw]['occurrences']:
+          config[tw]['occurrences'].append(entry)
   return config
 
 def getBook(book):

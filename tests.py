@@ -70,12 +70,12 @@ class TestExport(unittest.TestCase):
     config = loadConfig('sources/test-config.yaml')
     self.assertEqual(type(config), dict)
     self.assertEqual(len(config['aaron']['occurrences']), 5)
-    self.assertEqual(len(config['aaron']['false_positives']), 0)
+    self.assertEqual(len(config['aaron']['false_positives']), 1)
 
   def testconfigCheck(self):
     config = loadConfig('sources/test-config.yaml')
     self.assertTrue(configCheck('aaron', '1ch', '07', '38', config))
-    self.assertFalse(configCheck('aaron', '1ti', '02', '18', config))
+    self.assertFalse(configCheck('aaron', '1ch', '25', '12', config))
     self.assertFalse(configCheck('god', '1ch', '07', '38', config))
 
   def testConfigExport(self):
@@ -84,13 +84,18 @@ class TestExport(unittest.TestCase):
     config = export('sources/test-tW-MAT.csv', config, tw_list)
     config = export('diffs/test-tW-MAT.csv.diffs.csv', config, tw_list)
     self.assertTrue('scribe' in config)
+    self.assertTrue('rc://en/ulb/book/1ch/25/12' in config['aaron']['false_positives'])
     self.assertTrue('rc://en/ulb/book/mat/13/52' in config['scribe']['occurrences'])
     self.assertTrue('rc://en/ulb/book/mat/03/16' in config['holyspirit']['occurrences'])
     self.assertFalse('rc://en/ulb/book/mat/08/21' in config['godthefather']['occurrences'])
+    self.assertTrue('rc://en/ulb/book/mat/08/21' in config['godthefather']['false_positives'])
+    self.assertTrue('rc://en/ulb/book/mat/08/21' in config['godthefather']['false_positives'])
+    self.assertTrue('rc://en/ulb/book/mat/01/02' in config['father']['occurrences'])
     saveConfig('test-config.yaml', config)
     f = open('test-config.yaml', 'r').read()
     self.assertTrue(f.startswith('---'))
     self.assertTrue('rc://en/ulb/book/1ch/28/01' in f)
+    self.assertTrue('rc://en/ulb/book/1ch/25/12' in f)
     self.assertTrue('holyspirit' in f)
     self.assertTrue('rc://en/ulb/book/mat/13/52' in f)
     self.assertFalse("? ''" in f)
