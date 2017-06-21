@@ -86,7 +86,7 @@ books = {
 
 def main(args):
   getUSFM(False)
-  config = loadConfig('config.yaml')
+  config = loadConfig('../en_tw/bible/config.yaml')
   for f in [diff_file, new_file]:
     if os.path.exists(f):
       os.remove(f)

@@ -3,3 +3,5 @@ diffs
 *.usfm
 *.csv
 *.diffs
+config.yaml
+test-config.yaml
