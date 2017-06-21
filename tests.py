@@ -19,7 +19,7 @@ class TestgetURL(unittest.TestCase):
 class TestgetUSFM(unittest.TestCase):
 
   def testUpdate(self):
-    #getUSFM()
+    getUSFM()
     f = open('sources/57-TIT.usfm', 'r').read()
     names = ['Artemas', 'Tychicus', 'Zenas', 'Apollos', 'Paul']
     for x in names:
@@ -70,7 +70,7 @@ class TestExport(unittest.TestCase):
     config = loadConfig('sources/test-config.yaml')
     self.assertEqual(type(config), dict)
     self.assertEqual(len(config['aaron']['occurrences']), 5)
-    self.assertEqual(len(config['aaron']['false_positives']), 1)
+    self.assertEqual(len(config['aaron']['false_positives']), 2)
 
   def testconfigCheck(self):
     config = loadConfig('sources/test-config.yaml')
@@ -80,7 +80,7 @@ class TestExport(unittest.TestCase):
 
   def testConfigExport(self):
     config = loadConfig('sources/test-config.yaml')
-    tw_list = loadtWs('../en_tw/bible')
+    tw_list, tw_dict = loadtWs('../en_tw/bible')
     config = export('sources/test-tW-MAT.csv', config, tw_list)
     config = export('diffs/test-tW-MAT.csv.diffs.csv', config, tw_list)
     self.assertTrue('scribe' in config)
@@ -105,12 +105,31 @@ class TestExport(unittest.TestCase):
 class TestloadtWs(unittest.TestCase):
 
   def testloadtWs(self):
-    tw_list = loadtWs('../en_tw/bible')
+    tw_list, tw_dict = loadtWs('../en_tw/bible')
     self.assertEqual(type(tw_list), list)
+    self.assertEqual(type(tw_dict), dict)
     self.assertTrue('reward' in tw_list)
+    self.assertTrue('reward' in tw_dict)
     self.assertTrue('god' in tw_list)
     self.assertFalse('God' in tw_list)
+    self.assertFalse('God' in tw_dict)
     self.assertFalse('afather' in tw_list)
+    self.assertTrue('deceit' in tw_dict['deceive'])
+    self.assertTrue('heavenly Father' in tw_dict['godthefather'])
+
+class TestfindNew(unittest.TestCase):
+
+  def testfindNew(self):
+    if os.path.exists('test-new_file.csv'):
+      os.remove('test-new_file.csv')
+    tw_list, tw_dict = loadtWs('../en_tw/bible')
+    config = loadConfig('sources/test-config.yaml')
+    findNew(tw_dict, 'sources/test-41-MAT.usfm', config, 'test-new_file.csv')
+    f = open('test-new_file.csv', 'r').read()
+    self.assertTrue('mat,13,22' in f)
+    self.assertFalse('mat,9,38,send.txt,send,' in f)
+    self.assertFalse('mat,13,22,world' in f)
+    self.assertFalse('iyahweh' in f)
 
 
 if __name__ == '__main__':

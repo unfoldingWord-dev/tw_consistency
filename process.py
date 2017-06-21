@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # ~/vcs/OEB-USFM-Tools $ python transform.py --target=csv --name=ulb --usfmDir=../tw_consistency/ --builtDir=../tw_consistency/
 
 
@@ -14,6 +13,7 @@ from ruamel import yaml
 
 ULB_source_pattern = 'https://git.door43.org/Door43-Catalog/en_ulb/raw/master/{0}-{1}.usfm'
 diff_file = 'diffs/differences.csv'
+new_file = 'new_file.csv'
 books = {
           #u'GEN': [ u'Genesis', '01' ],
           #u'EXO': [ u'Exodus', '02' ],
@@ -86,11 +86,11 @@ books = {
 
 def main(args):
   getUSFM(False)
-  # Get JAMES
   config = loadConfig('config.yaml')
-  if os.path.exists(diff_file):
-    os.remove(diff_file)
-  tw_list = loadtWs('../en_tw/bible')
+  for f in [diff_file, new_file]:
+    if os.path.exists(f):
+      os.remove(f)
+  tw_list, tw_dict = loadtWs('../en_tw/bible')
   for usfm_file in glob('sources/[0-6]*.usfm'):
     tw_file = usfm_file.replace('usfm', 'tw.csv')
     if not os.path.exists(tw_file): continue
@@ -99,7 +99,36 @@ def main(args):
 
     # After editors review the diffs, run this:
     #config = export(diff_file, config, tw_list)
+
+    # Find possible new occurrences of tWs in the ULB
+    findNew(tw_dict, usfm_file, config, new_file)
   saveConfig('config.yaml', config)
+
+def findNew(tw_dict, usfm_file, config, new_file):
+  book = ''
+  chp = '0'
+  vs = '0'
+  new_rows = {}
+  ulb_book = open(usfm_file, 'r').readlines()
+  for tw in tw_dict.iterkeys():
+    for word in tw_dict[tw]:
+      for line in ulb_book:
+        if line.startswith('\\id '):
+          book = line.split()[1].strip().lower()
+        if line.startswith('\\c '):
+          chp = line.split()[1].strip()
+        if line.startswith('\\v '):
+          vs = line.split()[1].strip()
+        if ( ' {0} '.format(word) in line ):
+          if not configCheck(tw, book, chp, vs, config):
+            if not configCheck(tw, book, chp, vs, config, 'false_positives'):
+              if ( tw == 'iyahweh' ):
+                continue
+              key = [book, chp, vs, '{0}.txt'.format(tw)]
+              new_rows[str(key)] = ['', book, chp, vs, '{0}.txt'.format(tw), word, line]
+  new = csv.writer(open(new_file, 'a'))
+  for k in new_rows.iterkeys():
+    new.writerow(new_rows[k])
 
 def compare(res1, res2, config):
   ulb_book = open(res2, 'r').readlines()
@@ -120,13 +149,15 @@ def compare(res1, res2, config):
           continue
         row[7] = ulb_text
         diff.writerow(row)
+  # Now check for new occurrences in this book
+  #findNew(tw_dict, ulb_book, config)
 
-def configCheck(tw, bk, chp, vs, config):
+def configCheck(tw, bk, chp, vs, config, section='occurrences'):
   '''
   Returns True if tW is found in `occurrences` list in config.yaml.
   '''
   if tw in config:
-    if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2)) in config[tw]['occurrences']:
+    if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2)) in config[tw][section]:
       return True
   return False
 
@@ -157,10 +188,16 @@ def getBook(book):
   return bk[0].lower()
 
 def loadtWs(path):
-  tws = []
+  tw_list = []
+  tw_dict = {}
   for x in glob('{0}/*/*.md'.format(path)):
-    tws.append(x.rsplit('/', 1)[1].rsplit('.', 1)[0])
-  return tws
+    tw_slug = x.rsplit('/', 1)[1].rsplit('.', 1)[0]
+    tw_list.append(tw_slug)
+    tw_dict[tw_slug] = []
+    tw_text = open(x, 'r').readline()
+    for word in tw_text.split(','):
+      tw_dict[tw_slug].append(word.strip().strip('# '))
+  return tw_list, tw_dict
 
 def saveConfig(config_path, config):
   config_f = open(config_path, 'w')
