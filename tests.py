@@ -46,8 +46,9 @@ class TestCompare(unittest.TestCase):
     self.assertEqual(getULBText(ulb_book, '5', '9'), 'Blessed are the peacemakers, for they will be called sons of God.')
 
   def testCompareString(self):
+    if os.path.exists(diff_file): os.remove(diff_file)
     compare('sources/test-tW-MAT.csv', 'sources/test-41-MAT.usfm', {})
-    f = open('diffs/test-tW-MAT.csv.diffs.csv', 'r').read()
+    f = open('diffs/differences.csv', 'r').read()
     self.assertTrue('Therefore every scribe' in f)
     self.assertTrue('Jesus came up immediately from the water' in f)
     self.assertFalse('appeared to him in a dream, saying' in f)
@@ -62,7 +63,7 @@ class TestCompare(unittest.TestCase):
     self.assertFalse('And whoever speaks any word' in f)
     self.assertFalse('Matthew,,' in f)
     self.assertTrue('dove and alighting on him.' in f)
-    self.assertEqual(len(open('diffs/test-tW-MAT.csv.diffs.csv', 'r').readlines()), 3)
+    self.assertEqual(len(open('diffs/differences.csv', 'r').readlines()), 2)
 
 class TestExport(unittest.TestCase):
 
@@ -82,7 +83,7 @@ class TestExport(unittest.TestCase):
     config = loadConfig('sources/test-config.yaml')
     tw_list, tw_dict = loadtWs('../en_tw/bible')
     config = export('sources/test-tW-MAT.csv', config, tw_list)
-    config = export('diffs/test-tW-MAT.csv.diffs.csv', config, tw_list)
+    config = export('diffs/differences.csv', config, tw_list)
     self.assertTrue('scribe' in config)
     self.assertTrue('rc://en/ulb/book/1ch/25/12' in config['aaron']['false_positives'])
     self.assertTrue('rc://en/ulb/book/mat/13/52' in config['scribe']['occurrences'])
