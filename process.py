@@ -124,8 +124,6 @@ def findNew(tw_dict, usfm_file, config, new_file):
         if ( ' {0} '.format(word) in line ):
           if not configCheck(tw, book, chp, vs, config):
             if not configCheck(tw, book, chp, vs, config, 'false_positives'):
-              if ( tw == 'iyahweh' ):
-                continue
               key = [book, chp, vs, '{0}.txt'.format(tw)]
               new_rows[str(key)] = ['', book, chp, vs, '{0}.txt'.format(tw), word, line]
   new = csv.writer(open(new_file, 'a'))
