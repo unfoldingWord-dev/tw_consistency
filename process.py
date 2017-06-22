@@ -113,6 +113,8 @@ def findNew(tw_dict, usfm_file, config, new_file):
   for tw in tw_dict.iterkeys():
     for word in tw_dict[tw]:
       for line in ulb_book:
+        if line.startswith('\\toc1 '):
+          continue
         if line.startswith('\\id '):
           book = line.split()[1].strip().lower()
         if line.startswith('\\c '):
@@ -149,8 +151,6 @@ def compare(res1, res2, config):
           continue
         row[7] = ulb_text
         diff.writerow(row)
-  # Now check for new occurrences in this book
-  #findNew(tw_dict, ulb_book, config)
 
 def configCheck(tw, bk, chp, vs, config, section='occurrences'):
   '''

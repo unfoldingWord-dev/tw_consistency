@@ -131,6 +131,7 @@ class TestfindNew(unittest.TestCase):
     self.assertFalse('mat,9,38,send.txt,send,' in f)
     self.assertFalse('mat,13,22,world' in f)
     self.assertFalse('iyahweh' in f)
+    self.assertFalse('toc1' in f)
 
 
 if __name__ == '__main__':
