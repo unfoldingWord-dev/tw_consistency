@@ -33,9 +33,9 @@ class TestExport(unittest.TestCase):
   def testconfigCheck(self):
     config = loadConfig('test_data/test-config.yaml')
     self.assertTrue(configCheck('aaron', '1ch', '07', '38', config))
-    self.assertTrue(configCheck('aaron', '1CH', '07', '38', config))
+    self.assertTrue(configCheck('aaron', '1ch', '07', '38', config))
     self.assertFalse(configCheck('aaron', '1ch', '25', '12', config))
-    self.assertFalse(configCheck('aaron', '1CH', '25', '12', config))
+    self.assertFalse(configCheck('aaron', '1ch', '25', '12', config))
     self.assertFalse(configCheck('god', '1ch', '07', '38', config))
 
   def testConfigExport(self):
@@ -84,13 +84,22 @@ class TestfindNew(unittest.TestCase):
     tw_list, tw_dict = loadtWs(os.path.join(tw_dir, 'bible'))
     findNew(tw_dict, 'test_data/test-41-MAT.usfm', config, 'test-tw_review.csv')
     f = open('test-tw_review.csv', 'r').read()
-    self.assertTrue('MAT,13,22' in f)
-    self.assertFalse('MAT,9,38,send.txt,send,' in f)
-    self.assertFalse('MAT,13,22,world' in f)
+    self.assertTrue('mat,13,22' in f)
+    self.assertTrue('TRUE,mat,1,20,messenger.md' in f)
+    self.assertFalse('mat,9,38,send.txt,send,' in f)
+    self.assertFalse('mat,13,22,world' in f)
     self.assertFalse('iyahweh' in f)
     self.assertFalse('toc1' in f)
     os.remove('test-tw_review.csv')
 
+  def testfindRemoved(self):
+    config = loadConfig('test_data/test-config.yaml')
+    tw_list, tw_dict = loadtWs(os.path.join(tw_dir, 'bible'))
+    findNew(tw_dict, 'test_data/test-41-MAT.usfm', config, 'test-tw_review.csv')
+    f = open('test-tw_review.csv', 'r').read()
+    self.assertTrue('FALSE,mat,01,20,angel.md' in f)
+    self.assertFalse('FALSE,1ch,01,05,aaron.md' in f)
+    os.remove('test-tw_review.csv')
 
 if __name__ == '__main__':
   unittest.main()

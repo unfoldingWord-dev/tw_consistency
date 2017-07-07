@@ -94,16 +94,18 @@ def findNew(tw_dict, usfm_file, config, tw_review):
   chp = '0'
   vs = '0'
   new_rows = {}
+  changed_rows = []
   ulb_book = open(usfm_file, 'r').readlines()
   for tw in tw_dict.iterkeys():
+    all_hits = []
     for word in tw_dict[tw]:
       for line in ulb_book:
         if line.startswith('\\toc1 '):
           continue
         # Make sure we know what book this is
         if line.startswith('\\id '):
-          book = line.split()[1].strip().upper()
-          if book not in books:
+          book = line.split()[1].strip().lower()
+          if book.upper() not in books:
             print 'Could not find {0} from USFM in the books dictionary'.format(book)
             sys.exit(1)
         # Grab the chapter number as we iterate
@@ -112,15 +114,41 @@ def findNew(tw_dict, usfm_file, config, tw_review):
         # Grab the verse number as we iterate
         if line.startswith('\\v '):
           vs = line.split()[1].strip()
-        # Search for the tW on this line, no word form magic
-        if ( ' {0} '.format(word) in line ):
+        # Search for the tW on this line, no word form magic, just punctuation
+        if ( ' {0} '.format(word) in line or
+             ' {0}.'.format(word) in line or
+             ' {0},'.format(word) in line or
+             ' {0}\''.format(word) in line or
+             '\'{0} '.format(word) in line or
+             ' {0}"'.format(word) in line or
+             '"{0} '.format(word) in line or
+             ' {0}!'.format(word) in line or
+             ' {0})'.format(word) in line or
+             '({0}'.format(word) in line or
+             '-{0}'.format(word) in line or
+             ' {0}-'.format(word) in line or
+             ' {0}?'.format(word) in line or
+             line.endswith(' {0}'.format(word)) ):
+          all_hits.append('rc://en/ulb/book/{0}/{1}/{2}'.format(book,
+                                                   chp.zfill(2), vs.zfill(2)))
           if not configCheck(tw, book, chp, vs, config):
             if not configCheck(tw, book, chp, vs, config, 'false_positives'):
               key = [book, chp, vs, '{0}.md'.format(tw)]
-              new_rows[str(key)] = ['TRUE', book, chp, vs, '{0}.md'.format(tw), word, line]
+              new_rows[str(key)] = ['TRUE', book, chp, vs, '{0}.md'.format(tw),
+                                                                    word, line]
+
+    # Now check to see if any occurrences have been removed from ULB
+    if tw not in config: continue
+    for entry in config[tw]['occurrences']:
+      b, c, v = entry.rsplit('/', 3)[1:]
+      if b != book: continue
+      if entry not in all_hits:
+        changed_rows.append(['FALSE', b, c, v, '{0}.md'.format(tw), '', ''])
   new = csv.writer(open(tw_review, 'a'))
   for k in new_rows.iterkeys():
     new.writerow(new_rows[k])
+  for x in changed_rows:
+    new.writerow(x)
 
 def configCheck(tw, bk, chp, vs, config, section='occurrences'):
   '''
