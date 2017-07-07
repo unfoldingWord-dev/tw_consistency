@@ -182,6 +182,8 @@ def export(f, config, tw_list):
   return config
 
 def getBook(book):
+  if book.upper() in books:
+    return book.lower()
   bk = [x for x in books.iterkeys() if books[x][0] == book.strip()]
   return bk[0].lower()
 
@@ -198,6 +200,9 @@ def loadtWs(path):
   return tw_list, tw_dict
 
 def saveConfig(config_path, config):
+  for x in config.iterkeys():
+    config[x]['false_positives'].sort()
+    config[x]['occurrences'].sort()
   config_f = open(config_path, 'w')
   yaml.safe_dump(config, config_f, default_flow_style=False, explicit_start=True)
 
