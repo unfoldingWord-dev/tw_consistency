@@ -18,11 +18,20 @@ You can run tests via `python tests.py`.
 
 ## Running
 
-After that, you can run `python process.py` and this script will output CSV file into the `diffs/` directory that records everywhere that the ULB text has changed since the previous review.
+### Running a Comparison Export
 
-In addition, the script will output a `config.yaml` file which is an exhaustive list of everywhere that the tW is listed in the ULB.  Currently this is only for the NT.
+If you want to check the current list of tWs against the current USFM, you can run:
 
+    python process.py -e
 
+This will generate a file named `tw_review.csv` in the current working directory.  By default, every entry is marked TRUE to make reviewing for false-positives easier.
+
+### Importing a Reviewed File
+
+After the `tw_review.csv` has been reviewed for correctness, you can import the resulting data into the `config.yaml` file by running:
+
+    python process.py -i
+    
 ## Future
 
 This is a short term solution that will aid consistency for the June/July 2017 release of our English source content.  Longer term this consistency feature will be based off Strongs numbers.

@@ -253,6 +253,6 @@ if __name__ == '__main__':
       print 'Could not find {0} in current directory'.format(tw_review)
       sys.exit(1)
     config = export(tw_review, config, tw_list)
-    saveConfig('config.yaml', config)
+    saveConfig(tw_config, config)
     sys.exit(0)
 
