@@ -5,6 +5,7 @@ aaron:
   - rc://en/ulb/book/mat/13/22
   occurrences:
   - rc://en/ulb/book/1ch/01/05
+  - rc://en/ulb/book/tit/01/05
   - rc://en/ulb/book/1ch/07/38
   - rc://en/ulb/book/1ch/16/44
   - rc://en/ulb/book/1ch/23/12
@@ -26,7 +27,8 @@ godthefather:
   occurrences:
   - rc://en/ulb/book/mat/05/16
 holyspirit:
-  false_positives: []
+  false_positives:
+  - rc://en/ulb/book/tit/01/18
   occurrences:
   - rc://en/ulb/book/mat/01/18
   - rc://en/ulb/book/mat/01/20

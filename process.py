@@ -177,9 +177,13 @@ def export(f, config, tw_list):
       if row[0] == 'FALSE':
         if entry not in config[tw]['false_positives']:
           config[tw]['false_positives'].append(entry)
+        if entry in config[tw]['occurrences']:
+          config[tw]['occurrences'].remove(entry)
       else:
         if entry not in config[tw]['occurrences']:
           config[tw]['occurrences'].append(entry)
+        if entry in config[tw]['false_positives']:
+          config[tw]['false_positives'].remove(entry)
   return config
 
 def getBook(book):

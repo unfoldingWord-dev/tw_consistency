@@ -27,7 +27,7 @@ class TestExport(unittest.TestCase):
   def testloadConfig(self):
     config = loadConfig('test_data/test-config.yaml')
     self.assertEqual(type(config), dict)
-    self.assertEqual(len(config['aaron']['occurrences']), 5)
+    self.assertEqual(len(config['aaron']['occurrences']), 6)
     self.assertEqual(len(config['aaron']['false_positives']), 2)
 
   def testconfigCheck(self):
@@ -41,7 +41,7 @@ class TestExport(unittest.TestCase):
   def testConfigExport(self):
     config = loadConfig('test_data/test-config.yaml')
     tw_list, tw_dict = loadtWs('../en_tw/bible')
-    config = export('test_data/test-differences.csv', config, tw_list)
+    config = export('test_data/test-tw_review.csv', config, tw_list)
     self.assertTrue('scribe' in config)
     self.assertTrue('rc://en/ulb/book/1ch/25/12' in config['aaron']['false_positives'])
     self.assertTrue('rc://en/ulb/book/mat/13/52' in config['scribe']['occurrences'])
@@ -50,6 +50,12 @@ class TestExport(unittest.TestCase):
     self.assertTrue('rc://en/ulb/book/mat/08/21' in config['godthefather']['false_positives'])
     self.assertTrue('rc://en/ulb/book/mat/08/21' in config['godthefather']['false_positives'])
     self.assertTrue('rc://en/ulb/book/mat/01/02' in config['father']['occurrences'])
+    # This ensures that entry moves from occurrence to false_positive if it was marked as FALSE
+    self.assertTrue('rc://en/ulb/book/tit/01/05' in config['aaron']['false_positives'])
+    self.assertFalse('rc://en/ulb/book/tit/01/05' in config['aaron']['occurrences'])
+    # This ensures that entry moves from false_positive to occurrences if it was marked as TRUE
+    self.assertFalse('rc://en/ulb/book/tit/01/18' in config['holyspirit']['false_positives'])
+    self.assertTrue('rc://en/ulb/book/tit/01/18' in config['holyspirit']['occurrences'])
     saveConfig('test-config.yaml', config)
     f = open('test-config.yaml', 'r').read()
     self.assertTrue(f.startswith('---'))
@@ -61,6 +67,7 @@ class TestExport(unittest.TestCase):
     new_config = loadConfig('test-config.yaml')
     self.assertEqual(type(new_config), dict)
     os.remove('test-config.yaml')
+
 
 class TestloadtWs(unittest.TestCase):
 
