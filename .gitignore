@@ -1,7 +1,4 @@
-diffs
+sources/usfm
+sources/old
+sources/tw
 *.pyc
-*.usfm
-*.csv
-*.diffs
-config.yaml
-test-config.yaml

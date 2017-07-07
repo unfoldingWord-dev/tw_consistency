@@ -5,12 +5,12 @@ This repository contains code to aid the content team(s) in achieving consistenc
 
 ## Setup
 
-The CSV files need to be downloaded manually from Google Sheets and placed into the `sources/` directory.
-
-The translationWords need to be downloaded into a sister directory to this one.  For example:
+The USFM and translationWords need to be downloaded into the sources directory.  Do the following to get setup:
 
     git clone https://github.com/unfoldingWord-dev/tw_consistency.git
-    git clone https://git.door43.org/Door43/en_tw.git
+    cd tw_consistency/sources
+    git clone https://git.door43.org/Door43/en_tw.git tw
+    git clone https://git.door43.org/Door43/en_ulb.git usfm
 
 ## Tests
 

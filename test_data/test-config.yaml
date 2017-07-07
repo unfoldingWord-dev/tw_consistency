@@ -1,0 +1,45 @@
+---
+aaron:
+  false_positives:
+  - rc://en/ulb/book/1ch/25/12
+  - rc://en/ulb/book/mat/13/22
+  occurrences:
+  - rc://en/ulb/book/1ch/01/05
+  - rc://en/ulb/book/1ch/07/38
+  - rc://en/ulb/book/1ch/16/44
+  - rc://en/ulb/book/1ch/23/12
+  - rc://en/ulb/book/1ch/28/01
+angel:
+  false_positives: []
+  occurrences:
+  - rc://en/ulb/book/mat/01/20
+  - rc://en/ulb/book/mat/01/24
+  - rc://en/ulb/book/mat/02/13
+  - rc://en/ulb/book/mat/02/19
+father:
+  false_positives: []
+  occurrences:
+  - rc://en/ulb/book/mat/01/02
+godthefather:
+  false_positives:
+  - rc://en/ulb/book/mat/08/21
+  occurrences:
+  - rc://en/ulb/book/mat/05/16
+holyspirit:
+  false_positives: []
+  occurrences:
+  - rc://en/ulb/book/mat/01/18
+  - rc://en/ulb/book/mat/01/20
+  - rc://en/ulb/book/mat/03/11
+  - rc://en/ulb/book/mat/03/16
+  - rc://en/ulb/book/mat/12/28
+  - rc://en/ulb/book/mat/12/32
+scribe:
+  false_positives: []
+  occurrences:
+  - rc://en/ulb/book/mat/08/19
+  - rc://en/ulb/book/mat/13/52
+world:
+  false_positives: []
+  occurrences:
+  - rc://en/ulb/book/mat/13/22

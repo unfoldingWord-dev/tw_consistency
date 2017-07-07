@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # ~/vcs/OEB-USFM-Tools $ python transform.py --target=csv --name=ulb --usfmDir=../tw_consistency/ --builtDir=../tw_consistency/
 
 
@@ -7,13 +7,17 @@ import sys
 import csv
 import shutil
 import urllib2
+import argparse
 from glob import glob
 from ruamel import yaml
 
 
-ULB_source_pattern = 'https://git.door43.org/Door43-Catalog/en_ulb/raw/master/{0}-{1}.usfm'
-diff_file = 'diffs/differences.csv'
-new_file = 'new_file.csv'
+usfm_dir = 'sources/usfm'
+usfm_dir_manifest = os.path.join(usfm_dir, 'manifest.yaml')
+tw_dir = 'sources/tw'
+tw_bible_dir = os.path.join(tw_dir, 'bible')
+tw_config = os.path.join(tw_bible_dir, 'config.yaml')
+tw_review = 'tw_review.csv'
 books = {
           #u'GEN': [ u'Genesis', '01' ],
           #u'EXO': [ u'Exodus', '02' ],
@@ -84,27 +88,8 @@ books = {
 }
 
 
-def main(args):
-  getUSFM(False)
-  config = loadConfig('../en_tw/bible/config.yaml')
-  for f in [diff_file, new_file]:
-    if os.path.exists(f):
-      os.remove(f)
-  tw_list, tw_dict = loadtWs('../en_tw/bible')
-  for usfm_file in glob('sources/[0-6]*.usfm'):
-    tw_file = usfm_file.replace('usfm', 'tw.csv')
-    if not os.path.exists(tw_file): continue
-    compare(tw_file, usfm_file, config)
-    config = export(tw_file, config, tw_list)
 
-    # After editors review the diffs, run this:
-    #config = export(diff_file, config, tw_list)
-
-    # Find possible new occurrences of tWs in the ULB
-    findNew(tw_dict, usfm_file, config, new_file)
-  saveConfig('config.yaml', config)
-
-def findNew(tw_dict, usfm_file, config, new_file):
+def findNew(tw_dict, usfm_file, config, tw_review):
   book = ''
   chp = '0'
   vs = '0'
@@ -115,47 +100,35 @@ def findNew(tw_dict, usfm_file, config, new_file):
       for line in ulb_book:
         if line.startswith('\\toc1 '):
           continue
+        # Make sure we know what book this is
         if line.startswith('\\id '):
-          book = line.split()[1].strip().lower()
+          book = line.split()[1].strip().upper()
+          if book not in books:
+            print 'Could not find {0} from USFM in the books dictionary'.format(book)
+            sys.exit(1)
+        # Grab the chapter number as we iterate
         if line.startswith('\\c '):
           chp = line.split()[1].strip()
+        # Grab the verse number as we iterate
         if line.startswith('\\v '):
           vs = line.split()[1].strip()
+        # Search for the tW on this line, no word form magic
         if ( ' {0} '.format(word) in line ):
           if not configCheck(tw, book, chp, vs, config):
             if not configCheck(tw, book, chp, vs, config, 'false_positives'):
-              key = [book, chp, vs, '{0}.txt'.format(tw)]
-              new_rows[str(key)] = ['', book, chp, vs, '{0}.txt'.format(tw), word, line]
-  new = csv.writer(open(new_file, 'a'))
+              key = [book, chp, vs, '{0}.md'.format(tw)]
+              new_rows[str(key)] = ['TRUE', book, chp, vs, '{0}.md'.format(tw), word, line]
+  new = csv.writer(open(tw_review, 'a'))
   for k in new_rows.iterkeys():
     new.writerow(new_rows[k])
-
-def compare(res1, res2, config):
-  ulb_book = open(res2, 'r').readlines()
-  diff = csv.writer(open(diff_file, 'a'))
-  with open(res1, 'rb') as twcsv:
-    for row in csv.reader(twcsv):
-      book, chp, vs = row[1:4]
-      if book == 'Book':
-        continue
-      tw_ulb_text = row[7].strip()
-      if tw_ulb_text == '': continue
-      ulb_text = getULBText(ulb_book, chp, vs)
-      if tw_ulb_text != ulb_text:
-        tw = row[5].rsplit('.txt', 1)[0].lower()
-        # Check to see if this combo is alread in config.yaml,
-        # if it is, continue as no need to require a recheck
-        if configCheck(tw, getBook(book), chp, vs, config):
-          continue
-        row[7] = ulb_text
-        diff.writerow(row)
 
 def configCheck(tw, bk, chp, vs, config, section='occurrences'):
   '''
   Returns True if tW is found in `occurrences` list in config.yaml.
   '''
   if tw in config:
-    if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk, chp.zfill(2), vs.zfill(2)) in config[tw][section]:
+    if 'rc://en/ulb/book/{0}/{1}/{2}'.format(bk.lower(), chp.zfill(2),
+                                          vs.zfill(2)) in config[tw][section]:
       return True
   return False
 
@@ -165,10 +138,10 @@ def export(f, config, tw_list):
       book, chp, vs = row[1:4]
       if ( book == 'Book' or book == '' ): continue
       bk = getBook(book)
-      tw = row[5].rsplit('.txt', 1)[0].lower()
+      tw = row[4].rsplit('.md', 1)[0].lower()
       if tw == '': continue
       if tw not in tw_list:
-        ######print row
+        print row
         continue
       if tw not in config:
         config[tw] = {'false_positives': [], 'occurrences': []}
@@ -231,24 +204,55 @@ def getULBText(ulb_book, chp, vs):
     if '\\c {0}'.format(chp) in line:
       inchp = True
   return clean_line
-  
 
-def getUSFM(update=True):
-  for entry in books.iterkeys():
-    source_url = ULB_source_pattern.format(books[entry][1], entry)
-    output_path = os.path.join(os.getcwd(), 'sources', source_url.rsplit('/', 1)[1])
-    if not update:
-      if os.path.exists(output_path): continue
-    getURL(source_url, output_path)
-
-def getURL(url, outfile):
-  try:
-    request = urllib2.urlopen(url)
-  except:
-    print "  => ERROR retrieving %s\nCheck the URL" % url
-    sys.exit(1)
-  with open(outfile, 'wb') as fp:
-    shutil.copyfileobj(request, fp)
 
 if __name__ == '__main__':
-  sys.exit(main(sys.argv[1:]))
+  parser = argparse.ArgumentParser(description=__doc__,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  parser.add_argument('-e', '--export', dest="tw_export", default=False,
+      action='store_true', help='Export {0} to be reviewed.'.format(tw_review))
+  parser.add_argument('-i', '--import', dest="tw_import", default=False,
+      action='store_true', help='Import reviewed file, {0}.'.format(tw_review))
+
+  # Parse args, exit if neither -e or -i was provided
+  if len(sys.argv[1:]) < 1:
+    parser.print_help()
+    sys.exit(1)
+  args = parser.parse_args(sys.argv[1:])
+
+  # Ensure tW is cloned locally
+  if not os.path.exists(tw_config):
+    print 'Could not find {0}, make sure to clone tW into {1}'.format(
+                                                            tw_config, tw_dir)
+    sys.exit(1)
+
+  # Ensure USFM is cloned locally
+  if not os.path.exists(usfm_dir_manifest):
+    print 'Could not find {0}, make sure to clone USFM into {1}'.format(
+                                                  usfm_dir_manifest, usfm_dir)
+    sys.exit(1)
+
+  # Load tW config and tW terms
+  config = loadConfig(tw_config)
+  tw_list, tw_dict = loadtWs(os.path.join(tw_dir, 'bible'))
+
+  # For exporting, run the comparison and output tw_review file
+  if args.tw_export:
+    if os.path.exists(tw_review):
+      os.remove(tw_review)
+    for usfm_file in glob('{0}/[0-6]*.usfm'.format(usfm_dir)):
+      # Only process the books enabled in the books dictionary
+      if not usfm_file.rstrip('.usfm').split('-')[1] in books: continue
+      findNew(tw_dict, usfm_file, config, tw_review)
+    print 'Please review {0}.'.format(tw_review)
+    sys.exit(0)
+
+  # For importing, verify file exists then run the update of config.yaml
+  if args.tw_import:
+    if not os.path.exists(tw_review):
+      print 'Could not find {0} in current directory'.format(tw_review)
+      sys.exit(1)
+    config = export(tw_review, config, tw_list)
+    saveConfig('config.yaml', config)
+    sys.exit(0)
+
