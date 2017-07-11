@@ -118,6 +118,7 @@ def findNew(tw_dict, usfm_file, config, tw_review):
         if ( ' {0} '.format(word) in line or
              ' {0}.'.format(word) in line or
              ' {0},'.format(word) in line or
+             ' {0}\'s'.format(word) in line or
              ' {0}\''.format(word) in line or
              '\'{0} '.format(word) in line or
              ' {0}"'.format(word) in line or
