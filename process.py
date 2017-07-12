@@ -18,6 +18,7 @@ tw_dir = 'sources/tw'
 tw_bible_dir = os.path.join(tw_dir, 'bible')
 tw_config = os.path.join(tw_bible_dir, 'config.yaml')
 tw_review = 'tw_review.csv'
+tw_by_book = 'tw_by_book.md'
 books = {
           #u'GEN': [ u'Genesis', '01' ],
           #u'EXO': [ u'Exodus', '02' ],
@@ -246,6 +247,8 @@ if __name__ == '__main__':
       action='store_true', help='Export {0} to be reviewed.'.format(tw_review))
   parser.add_argument('-i', '--import', dest="tw_import", default=False,
       action='store_true', help='Import reviewed file, {0}.'.format(tw_review))
+  parser.add_argument('-l', '--list-by-book', dest="list_by_book", default=False,
+      action='store_true', help='List occurrences by book from {0}.'.format(tw_config))
 
   # Parse args, exit if neither -e or -i was provided
   if len(sys.argv[1:]) < 1:
@@ -269,6 +272,31 @@ if __name__ == '__main__':
   config = loadConfig(tw_config)
   tw_list, tw_dict = loadtWs(os.path.join(tw_dir, 'bible'))
 
+  # List out tWs by book
+  if args.list_by_book:
+    by_book = {}
+    if os.path.exists(tw_by_book):
+      os.remove(tw_by_book)
+    for book in books.iterkeys():
+      bk = book.lower()
+      by_book[bk] = { 'kt': [], 'other': [] }
+      for entry in config:
+        for i in config[entry]['occurrences']:
+          if bk in i:
+            if os.path.exists('{0}/kt/{1}.md'.format(tw_bible_dir, entry)):
+              by_book[bk]['kt'].append(entry)
+            else:
+              by_book[bk]['other'].append(entry)
+            continue
+      print "\n\n# {0}".format(book.upper())
+      for x in ['kt', 'other']:
+        by_book[bk][x] = list(set(by_book[bk]['kt']))
+        by_book[bk][x].sort()
+        print "\n\n## {0}\n".format(x)
+        print '  *',
+        print '\n  * '.join(by_book[bk][x])
+    sys.exit(0)
+    
   # For exporting, run the comparison and output tw_review file
   if args.tw_export:
     if os.path.exists(tw_review):
